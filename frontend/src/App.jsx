@@ -12,7 +12,10 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`http://127.0.0.1:8000/analyze?url=${url}`);
+      const response = await axios.get(
+        `/api/analyze?url=${encodeURIComponent(url)}`
+      );
+
       setData(response.data);
     } catch (err) {
       setError("Unable to reach the backend. Make sure it's running!");
