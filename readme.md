@@ -1,21 +1,21 @@
-# 🚀 SEO Checker Pro
+# SEO Checker Pro
 
 **Unlock the full potential of your website.** SEO Checker Pro is a powerful, high-performance web application designed to provide instant technical SEO audits. Stop guessing why your site isn't ranking—get actionable insights and a clear path to improvement in seconds.
 
 ---
 
-## ✨ Key Features
+##  Key Features
 
-* **🔍 Deep Technical Audit**: We go beyond basic titles. We analyze H1 hierarchies, Meta descriptions, Image Alt text, and link density.
-* **📊 Dynamic Scoring**: Receive a score out of 100 based on weighted industry standards.
-* **⚡ Speed Analysis**: Real-time measurement of page response and load times.
-* **💡 Smart Recommendations**: For every "Warning" or "Failed" test, you get a specific "Human" tip on how to fix it.
-* **📄 Professional PDF Reports**: Generate and download a beautifully formatted PDF audit to share with clients or your dev team.
-* **🌌 Modern UI**: A sleek, dark-mode dashboard built with React and Tailwind CSS for a premium experience.
+* ** Deep Technical Audit**: We go beyond basic titles. We analyze H1 hierarchies, Meta descriptions, Image Alt text, and link density.
+* ** Dynamic Scoring**: Receive a score out of 100 based on weighted industry standards.
+* ** Speed Analysis**: Real-time measurement of page response and load times.
+* ** Smart Recommendations**: For every "Warning" or "Failed" test, you get a specific "Human" tip on how to fix it.
+* ** Professional PDF Reports**: Generate and download a beautifully formatted PDF audit to share with clients or your dev team.
+* ** Modern UI**: A sleek, dark-mode dashboard built with React and Tailwind CSS for a premium experience.
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 This project leverages the best of Python and JavaScript:
 
