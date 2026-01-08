@@ -73,12 +73,3 @@ Open a Pull Request
 Distributed under the MIT License. See LICENSE for more information.
 
 Developed with ❤️ by Rana and Jana 
----
-
-### **One more thing!**
-To make your GitHub look even better, you should add a **preview image** of your dashboard at the top of the README. 
-
-Would you like me to help you write the **`LICENSE`** file or the **`requirements.txt`** for your backend?
-/docs       # Technical documentation and roadmap
-/frontend     # Dashboard UI (React/Next.js)
-/docs         # Documentation and API specs
