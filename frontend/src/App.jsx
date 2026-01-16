@@ -39,7 +39,7 @@ function App() {
 
       <div className="relative z-10 w-full max-w-3xl px-4 mx-auto text-center">
         <h1 className="text-4xl md:text-6xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 animate-pulse">
-          SEO Checker Pro
+          BoostSEO
         </h1>
         <p className="text-gray-400 mb-8 text-sm md:text-lg">Detailed Technical Audit & Action Plan</p>
         
@@ -96,7 +96,7 @@ function App() {
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
               <a 
-                href={`http://127.0.0.1:8000/download-pdf?url=${url}`}
+                href={`/api/download-pdf?url=${encodeURIComponent(url)}`}
                 target="_blank"
                 rel="noreferrer"
                 className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl border border-white/20 transition-all flex items-center justify-center gap-2"
