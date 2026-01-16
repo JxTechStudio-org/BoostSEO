@@ -97,7 +97,7 @@ const Home = () => {
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
                 <a
-                  href={`http://127.0.0.1:8000/download-pdf?url=${encodeURIComponent(url)}`}
+                  href={`/api/download-pdf?url=${encodeURIComponent(url)}`}
                   target="_blank"
                   rel="noreferrer"
                   className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl border border-white/20 transition-all flex items-center justify-center gap-2"
