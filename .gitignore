@@ -5,3 +5,11 @@ node_modules/
 .venv/
 data/
 .superpowers/
+
+# Dependencies, virtualenvs and build output (recreated by npm/pip/vite)
+venv/
+dist/
+
+# Environment files
+.env.*
+!.env.example

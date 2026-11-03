@@ -1,0 +1,4 @@
+# Build context is the repo root (see docker-compose.yml), so paths are root-relative
+backend/venv
+backend/.venv
+**/__pycache__
