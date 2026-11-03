@@ -1,5 +1,8 @@
 version: "3.9"
 
+# Pin the project name so container/network/volume names don't depend on the folder name
+name: boostseo
+
 services:
   boostseo-backend:
     build:
