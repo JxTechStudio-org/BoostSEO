@@ -1,4 +1,5 @@
-FROM python:3.11-slim
+# ---------- Base: runtime dependencies ----------
+FROM python:3.11-slim AS base
 
 WORKDIR /app
 
@@ -11,6 +12,20 @@ RUN apt-get update && apt-get install -y \
 # Install python deps
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# ---------- Test stage (CI only: docker build --target test) ----------
+FROM base AS test
+
+COPY backend/requirements-dev.txt .
+RUN pip install --no-cache-dir -r requirements-dev.txt
+
+COPY backend/app ./app
+COPY backend/tests ./tests
+
+CMD ["python", "-m", "pytest", "-q"]
+
+# ---------- Production stage (default target, no tests or pytest) ----------
+FROM base AS production
 
 # Copy backend app
 COPY backend/app ./app
