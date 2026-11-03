@@ -72,7 +72,9 @@ const AdBanner = () => (
         data-full-width-responsive="true"
         ref={(el) => {
             if (el) {
-                try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (_) {}
+                try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch {
+                    // AdSense not loaded (e.g. blocked); nothing to do
+                }
             }
         }}
     />
@@ -104,7 +106,7 @@ const Home = () => {
         try {
             const response = await axios.get(`/api/analyze?url=${encodeURIComponent(url.trim())}`);
             setData(response.data);
-        } catch (err) {
+        } catch {
             setError('Unable to analyze the URL. Make sure it is publicly accessible and starts with https://');
         }
         setLoading(false);

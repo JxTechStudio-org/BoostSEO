@@ -6,6 +6,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+      target: production
     container_name: boostseo-backend
     restart: unless-stopped
     expose:
@@ -24,4 +25,8 @@ services:
       - boostseo-backend
 
 volumes:
+  # Holds comments.db. External so compose never creates or deletes it (`down -v` leaves it alone).
+  # On a fresh machine create it once: docker volume create boostseo_boostseo-comments-data
   boostseo-comments-data:
+    external: true
+    name: boostseo_boostseo-comments-data
