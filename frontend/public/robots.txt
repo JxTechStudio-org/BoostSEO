@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://boostseo.jxtechstudio.com/sitemap.xml
