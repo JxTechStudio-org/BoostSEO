@@ -7,6 +7,7 @@ from urllib.parse import urljoin, urlparse
 import httpx
 from bs4 import BeautifulSoup
 from app.core.constants import BROWSER_HEADERS
+from app.core.url_guard import UnsafeURLError, safe_request
 
 CATEGORY_ORDER = [
     "Meta & Social",
@@ -335,10 +336,12 @@ async def _check_broken_links(soup: BeautifulSoup, base_url: str, client: httpx.
 
     async def check_one(url: str) -> bool:
         try:
-            r = await client.head(url, timeout=5.0, follow_redirects=True, headers=BROWSER_HEADERS)
+            r = await safe_request(client, "HEAD", url, timeout=5.0, headers=BROWSER_HEADERS)
             if r.status_code == 405:
-                r = await client.get(url, timeout=5.0, follow_redirects=True, headers=BROWSER_HEADERS)
+                r = await safe_request(client, "GET", url, timeout=5.0, headers=BROWSER_HEADERS)
             return r.status_code >= 400
+        except UnsafeURLError:
+            return True
         except Exception:
             return True
 
