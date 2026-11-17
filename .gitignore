@@ -14,5 +14,6 @@ dist/
 .env.*
 !.env.example
 .DS_Store
-SEO_Report*.pdf
-backend/SEO_Detailed_Report.pdf
+
+# Generated SEO report PDFs — produced at runtime, never committed
+*.pdf
