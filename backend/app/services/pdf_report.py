@@ -1,5 +1,15 @@
+from datetime import date
+
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
+from reportlab.lib.utils import simpleSplit
+
+# Column layout for the checks table
+NAME_X = 50
+STATUS_X = 185
+MSG_X = 255
+NAME_WIDTH = STATUS_X - NAME_X - 10      # wrap width for the check name
+LINE_H = 11                              # height of one wrapped line
 
 
 def _draw_watermark(c, width, height):
@@ -17,6 +27,7 @@ def build_pdf(data: dict, file_path: str) -> None:
     width, height = letter
     score = data["score"]
     meta = data["meta"]
+    msg_width = width - 50 - MSG_X       # wrap width for the message column
 
     _draw_watermark(c, width, height)
 
@@ -28,7 +39,8 @@ def build_pdf(data: dict, file_path: str) -> None:
     c.setFont("Helvetica", 9)
     c.setFillColorRGB(0.4, 0.4, 0.4)
     c.drawString(50, height - 72, f"URL: {data['url']}")
-    c.drawString(50, height - 84, data["summary"])
+    c.drawString(50, height - 84, f"Generated: {date.today().isoformat()}")
+    c.drawString(50, height - 96, data["summary"])
 
     # score circle
     cx, cy, r = 510, height - 68, 38
@@ -46,30 +58,36 @@ def build_pdf(data: dict, file_path: str) -> None:
     # stats row
     c.setFont("Helvetica", 9)
     c.setFillColorRGB(0, 0.55, 0.2)
-    c.drawString(50, height - 100, f"Passed: {meta['checks_passed']}")
+    c.drawString(50, height - 112, f"Passed: {meta['checks_passed']}")
     c.setFillColorRGB(0.65, 0.45, 0)
-    c.drawString(130, height - 100, f"Warnings: {meta['checks_warned']}")
+    c.drawString(130, height - 112, f"Warnings: {meta['checks_warned']}")
     c.setFillColorRGB(0.75, 0.1, 0.1)
-    c.drawString(230, height - 100, f"Failed: {meta['checks_failed']}")
+    c.drawString(230, height - 112, f"Failed: {meta['checks_failed']}")
     c.setFillColorRGB(0.4, 0.4, 0.4)
-    c.drawString(310, height - 100, f"Response: {meta['response_time_ms']}ms")
+    c.drawString(310, height - 112, f"Response: {meta['response_time_ms']}ms")
+
+    # what the score means
+    c.setFont("Helvetica-Oblique", 8)
+    c.setFillColorRGB(0.4, 0.4, 0.4)
+    c.drawString(50, height - 126,
+                 "Score: 70+ good  ·  50-69 needs improvement  ·  below 50 poor")
 
     # divider
     c.setStrokeColorRGB(0.8, 0.8, 0.8)
-    c.line(50, height - 110, width - 50, height - 110)
+    c.line(50, height - 134, width - 50, height - 134)
 
-    y = height - 128
+    y = height - 152
 
-    def check_page_break():
+    def new_page_if_needed(needed: float):
         nonlocal y
-        if y < 60:
+        if y - needed < 50:
             c.showPage()
             _draw_watermark(c, width, height)
             y = height - 50
 
     # ── Category sections ────────────────────────────────────────────────────
     for cat in data["categories"]:
-        check_page_break()
+        new_page_if_needed(32)
 
         c.setFont("Helvetica-Bold", 11)
         c.setFillColorRGB(0.1, 0.4, 0.7)
@@ -80,16 +98,22 @@ def build_pdf(data: dict, file_path: str) -> None:
 
         c.setFont("Helvetica-Bold", 8)
         c.setFillColorRGB(0.3, 0.3, 0.3)
-        c.drawString(50, y, "Check")
-        c.drawString(185, y, "Status")
-        c.drawString(255, y, "Message")
+        c.drawString(NAME_X, y, "Check")
+        c.drawString(STATUS_X, y, "Status")
+        c.drawString(MSG_X, y, "Message")
         y -= 14
 
         for check in cat["checks"]:
-            check_page_break()
+            # wrap long text instead of cutting it off
+            name_lines = simpleSplit(check["name"], "Helvetica-Bold", 8, NAME_WIDTH)
+            msg_lines = simpleSplit(check["message"], "Helvetica", 8, msg_width)
+            row_h = max(len(name_lines), len(msg_lines), 1) * LINE_H
+            new_page_if_needed(row_h)
+
             c.setFont("Helvetica-Bold", 8)
             c.setFillColorRGB(0, 0, 0)
-            c.drawString(50, y, check["name"][:24])
+            for i, line in enumerate(name_lines):
+                c.drawString(NAME_X, y - i * LINE_H, line)
 
             status = check["status"]
             if status == "Passed":
@@ -98,12 +122,14 @@ def build_pdf(data: dict, file_path: str) -> None:
                 c.setFillColorRGB(0.65, 0.45, 0)
             else:
                 c.setFillColorRGB(0.75, 0.1, 0.1)
-            c.drawString(185, y, status)
+            c.drawString(STATUS_X, y, status)
 
-            c.setFillColorRGB(0.2, 0.2, 0.2)
             c.setFont("Helvetica", 8)
-            c.drawString(255, y, check["message"][:60])
-            y -= 14
+            c.setFillColorRGB(0.2, 0.2, 0.2)
+            for i, line in enumerate(msg_lines):
+                c.drawString(MSG_X, y - i * LINE_H, line)
+
+            y -= row_h + 3
 
         y -= 8
 
