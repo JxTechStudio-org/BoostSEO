@@ -7,6 +7,7 @@ from urllib.parse import urljoin, urlparse
 import httpx
 from bs4 import BeautifulSoup
 from app.core.constants import BROWSER_HEADERS
+from app.core.url_guard import UnsafeURLError, safe_get, safe_request
 
 CATEGORY_ORDER = [
     "Meta & Social",
@@ -286,7 +287,7 @@ def _check_robots_meta(soup: BeautifulSoup) -> CheckResult:
 
 async def _check_robots_txt(origin: str, client: httpx.AsyncClient) -> CheckResult:
     try:
-        r = await client.get(f"{origin}/robots.txt", timeout=5.0, headers=BROWSER_HEADERS)
+        r = await safe_get(client, f"{origin}/robots.txt", timeout=5.0, headers=BROWSER_HEADERS)
         if r.status_code == 200:
             return CheckResult("robots.txt", "Crawlability", "Passed",
                                "robots.txt found and accessible.", f"{origin}/robots.txt", 2)
@@ -299,7 +300,7 @@ async def _check_robots_txt(origin: str, client: httpx.AsyncClient) -> CheckResu
 
 async def _check_sitemap(origin: str, client: httpx.AsyncClient) -> CheckResult:
     try:
-        r = await client.get(f"{origin}/sitemap.xml", timeout=5.0, headers=BROWSER_HEADERS)
+        r = await safe_get(client, f"{origin}/sitemap.xml", timeout=5.0, headers=BROWSER_HEADERS)
         if r.status_code == 200:
             return CheckResult("Sitemap", "Crawlability", "Passed",
                                "sitemap.xml found and accessible.", f"{origin}/sitemap.xml", 2)
@@ -335,10 +336,12 @@ async def _check_broken_links(soup: BeautifulSoup, base_url: str, client: httpx.
 
     async def check_one(url: str) -> bool:
         try:
-            r = await client.head(url, timeout=5.0, follow_redirects=True, headers=BROWSER_HEADERS)
+            r = await safe_request(client, "HEAD", url, timeout=5.0, headers=BROWSER_HEADERS)
             if r.status_code == 405:
-                r = await client.get(url, timeout=5.0, follow_redirects=True, headers=BROWSER_HEADERS)
+                r = await safe_request(client, "GET", url, timeout=5.0, headers=BROWSER_HEADERS)
             return r.status_code >= 400
+        except UnsafeURLError:
+            return True
         except Exception:
             return True
 
@@ -380,7 +383,7 @@ async def run_audit(html: str, url: str, response_time_ms: float) -> dict:
         _check_robots_meta(soup),
     ]
 
-    async with httpx.AsyncClient(follow_redirects=True, timeout=10.0) as client:
+    async with httpx.AsyncClient(follow_redirects=False, timeout=10.0) as client:
         deep = list(await asyncio.gather(
             _check_robots_txt(origin, client),
             _check_sitemap(origin, client),
