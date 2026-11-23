@@ -1,9 +1,12 @@
 """SEO analysis endpoints: live audit and downloadable PDF report."""
+import os
+import tempfile
 from datetime import date
 from urllib.parse import urlparse
 
 from fastapi import APIRouter
 from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
 
 from app.core import audit_cache
 from app.services.fetcher import fetch_and_audit
@@ -31,12 +34,18 @@ async def download_pdf(url: str) -> FileResponse:
     """Build the PDF from the same result the screen showed.
 
     Reusing the cached audit keeps the PDF's numbers identical to the on-screen
-    report. If the cache has expired, we re-run the audit as a fallback. The
-    download is named after the site's domain and the report date.
+    report; if the cache has expired we re-run the audit as a fallback. Each
+    request writes to its own unique temp file, deleted after the response is
+    sent, and the download is named after the site's domain and the report date.
     """
     data = audit_cache.get_result(url)
     if data is None:
         data = await fetch_and_audit(url)
-    file_path = "SEO_Detailed_Report.pdf"
+    fd, file_path = tempfile.mkstemp(prefix="seo_report_", suffix=".pdf")
+    os.close(fd)
     build_pdf(data, file_path)
-    return FileResponse(file_path, filename=_report_filename(url))
+    return FileResponse(
+        file_path,
+        filename=_report_filename(url),
+        background=BackgroundTask(os.remove, file_path),
+    )
