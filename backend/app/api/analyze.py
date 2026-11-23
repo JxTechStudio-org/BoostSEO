@@ -29,7 +29,14 @@ async def download_pdf(url: str) -> FileResponse:
     data = await fetch_and_audit(url)
     fd, file_path = tempfile.mkstemp(prefix="seo_report_", suffix=".pdf")
     os.close(fd)
-    build_pdf(data, file_path)
+    try:
+        build_pdf(data, file_path)
+    except Exception:
+        # On a successful response the temp file is removed by the background
+        # task below; if building the PDF fails there is no response to attach
+        # that task to, so remove the empty temp file here before re-raising.
+        os.remove(file_path)
+        raise
     return FileResponse(
         file_path,
         filename="SEO_Report.pdf",

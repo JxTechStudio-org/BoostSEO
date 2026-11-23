@@ -12,13 +12,16 @@ BROWSER_HEADERS = {
     )
 }
 
-# CORS: only these origins may read the API with credentials. Wide-open
-# allow_origins=["*"] with allow_credentials is unsafe (any site could read the
-# API as the signed-in user). Override via the CORS_ALLOWED_ORIGINS env var
-# (comma-separated). Front-end and API share one origin in production.
-_DEFAULT_ORIGINS = "https://boostseo.jxtechstudio.com,http://localhost:3012"
-ALLOWED_ORIGINS = [
-    o.strip()
-    for o in os.getenv("CORS_ALLOWED_ORIGINS", _DEFAULT_ORIGINS).split(",")
-    if o.strip()
-]
+# CORS is not needed in production: the front-end and the API share one origin
+# (the SPA calls the API at /api on the same domain, proxied by nginx), so the
+# browser never makes a cross-origin request. The middleware is kept only for
+# local cross-origin development and is driven entirely by the
+# CORS_ALLOWED_ORIGINS env var (comma-separated). With the variable unset the
+# list is empty, so no cross-origin is allowed and no insecure default (such as
+# localhost) ever ships to production. Wide-open allow_origins=["*"] with
+# credentials would let any site read the API as the signed-in user.
+def parse_origins(raw: str) -> list[str]:
+    return [o.strip() for o in raw.split(",") if o.strip()]
+
+
+ALLOWED_ORIGINS = parse_origins(os.getenv("CORS_ALLOWED_ORIGINS", ""))
