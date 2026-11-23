@@ -11,6 +11,28 @@ MSG_X = 255
 NAME_WIDTH = STATUS_X - NAME_X - 10      # wrap width for the check name
 LINE_H = 11                              # height of one wrapped line
 
+# The same guides shown on the site (frontend/src/resources). Mirror the titles
+# and links here so the report points readers to the existing educational
+# content instead of duplicating it. Update SITE_URL if the domain changes.
+SITE_URL = "https://boostseo.jxtechstudio.com"
+SEO_GUIDES = [
+    {
+        "title": "The Complete Technical SEO Checklist",
+        "desc": "The 21 technical checks that most commonly break a site's search visibility, and how to fix each one.",
+        "url": f"{SITE_URL}/resources/technical-seo-checklist",
+    },
+    {
+        "title": "Meta Tags Guide: Title, Description & Open Graph",
+        "desc": "What each meta tag does, the length limits that matter, and good vs. bad examples.",
+        "url": f"{SITE_URL}/resources/meta-tags-guide",
+    },
+    {
+        "title": "How to Improve Page Speed (Without a Rebuild)",
+        "desc": "The highest-impact, lowest-effort fixes for slow pages, in the order to do them.",
+        "url": f"{SITE_URL}/resources/page-speed-guide",
+    },
+]
+
 
 def _draw_watermark(c, width, height):
     c.saveState()
@@ -132,5 +154,32 @@ def build_pdf(data: dict, file_path: str) -> None:
             y -= row_h + 3
 
         y -= 8
+
+    # ── SEO Guides: point readers to the site's existing guides ──────────────
+    new_page_if_needed(30 + len(SEO_GUIDES) * 34)
+    c.setFont("Helvetica-Bold", 11)
+    c.setFillColorRGB(0.1, 0.4, 0.7)
+    c.drawString(50, y, "SEO Guides — learn how to fix these")
+    c.setStrokeColorRGB(0.7, 0.7, 0.7)
+    c.line(50, y - 4, width - 50, y - 4)
+    y -= 18
+
+    for guide in SEO_GUIDES:
+        new_page_if_needed(34)
+        c.setFont("Helvetica-Bold", 9)
+        c.setFillColorRGB(0, 0, 0)
+        c.drawString(50, y, guide["title"])
+        y -= 12
+
+        c.setFont("Helvetica", 8)
+        c.setFillColorRGB(0.3, 0.3, 0.3)
+        for line in simpleSplit(guide["desc"], "Helvetica", 8, width - 100):
+            c.drawString(50, y, line)
+            y -= 10
+
+        c.setFont("Helvetica-Oblique", 8)
+        c.setFillColorRGB(0.1, 0.4, 0.7)
+        c.drawString(50, y, guide["url"])
+        y -= 18
 
     c.save()
