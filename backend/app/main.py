@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.constants import ALLOWED_ORIGINS
 from app.api.analyze import router as analyze_router
 from app.api.comments import router as comments_router
+from app.api.contact import router as contact_router
 
 app = FastAPI(title="BoostSEO API")
 
@@ -23,3 +24,4 @@ app.add_middleware(
 
 app.include_router(analyze_router)
 app.include_router(comments_router)
+app.include_router(contact_router)
