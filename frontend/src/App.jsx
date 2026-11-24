@@ -97,12 +97,15 @@ const Home = () => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [downloading, setDownloading] = useState(false);
+    const [downloadMsg, setDownloadMsg] = useState(null);
 
     const handleAnalyze = async () => {
         if (!url.trim()) return;
         setLoading(true);
         setError(null);
         setData(null);
+        setDownloadMsg(null);
         try {
             const response = await axios.get(`/api/analyze?url=${encodeURIComponent(url.trim())}`);
             setData(response.data);
@@ -110,6 +113,33 @@ const Home = () => {
             setError('Unable to analyze the URL. Make sure it is publicly accessible and starts with https://');
         }
         setLoading(false);
+    };
+
+    const handleDownload = async () => {
+        setDownloading(true);
+        setDownloadMsg(null);
+        try {
+            const response = await axios.get(
+                `/api/download-pdf?url=${encodeURIComponent(url)}`,
+                { responseType: 'blob' }
+            );
+            // Keep the server's domain+date filename (Content-Disposition).
+            const disposition = response.headers['content-disposition'] || '';
+            const match = disposition.match(/filename="?([^"]+)"?/);
+            const filename = match ? match[1] : 'SEO_Report.pdf';
+            const blobUrl = window.URL.createObjectURL(response.data);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(blobUrl);
+            setDownloadMsg({ type: 'success', text: 'Report downloaded.' });
+        } catch {
+            setDownloadMsg({ type: 'error', text: 'Download failed. Please try again.' });
+        }
+        setDownloading(false);
     };
 
     return (
@@ -193,15 +223,27 @@ const Home = () => {
                         </div>
 
                         {/* PDF download */}
-                        <div className="flex justify-center pb-4">
-                            <a
-                                href={`/api/download-pdf?url=${encodeURIComponent(url)}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl border border-white/20 transition-all flex items-center gap-2"
+                        <div className="flex flex-col items-center gap-3 pb-4">
+                            <button
+                                onClick={handleDownload}
+                                disabled={downloading}
+                                className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl border border-white/20 transition-all flex items-center gap-2 disabled:opacity-50"
                             >
-                                <IconDownload className="w-4 h-4" /> Download PDF Report
-                            </a>
+                                <IconDownload className="w-4 h-4" />
+                                {downloading ? 'Preparing…' : 'Download PDF Report'}
+                            </button>
+                            {downloadMsg && (
+                                <p
+                                    role="status"
+                                    className={`text-sm px-3 py-2 rounded-lg border ${
+                                        downloadMsg.type === 'success'
+                                            ? 'text-green-400 bg-green-400/10 border-green-400/20'
+                                            : 'text-red-400 bg-red-400/10 border-red-400/20'
+                                    }`}
+                                >
+                                    {downloadMsg.text}
+                                </p>
+                            )}
                         </div>
                     </div>
                 )}
