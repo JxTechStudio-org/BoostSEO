@@ -3,6 +3,7 @@ from datetime import date
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import simpleSplit
+from reportlab.pdfbase.pdfmetrics import stringWidth
 
 # Column layout for the checks table
 NAME_X = 50
@@ -44,6 +45,33 @@ def _draw_watermark(c, width, height):
     c.restoreState()
 
 
+def _wrap_text(text: str, font: str, size: int, max_width: float) -> list[str]:
+    """Wrap text to ``max_width``, breaking on spaces and, when a single token is
+    still too wide (e.g. a long URL with no spaces), breaking it by character."""
+    lines: list[str] = []
+    for soft in simpleSplit(text, font, size, max_width):
+        if stringWidth(soft, font, size) <= max_width:
+            lines.append(soft)
+            continue
+        cur = ""
+        for ch in soft:
+            if stringWidth(cur + ch, font, size) <= max_width:
+                cur += ch
+            else:
+                lines.append(cur)
+                cur = ch
+        if cur:
+            lines.append(cur)
+    return lines or [""]
+
+
+def _wrap_check(check: dict, name_width: float, msg_width: float):
+    """Split a check's name and message into lines that fit their columns."""
+    name_lines = _wrap_text(check["name"], "Helvetica-Bold", 8, name_width)
+    msg_lines = _wrap_text(check["message"], "Helvetica", 8, msg_width)
+    return name_lines, msg_lines
+
+
 def build_pdf(data: dict, file_path: str) -> None:
     c = canvas.Canvas(file_path, pagesize=letter)
     width, height = letter
@@ -58,13 +86,7 @@ def build_pdf(data: dict, file_path: str) -> None:
     c.setFillColorRGB(0.1, 0.4, 0.7)
     c.drawString(50, height - 55, "BoostSEO — Technical SEO Report")
 
-    c.setFont("Helvetica", 9)
-    c.setFillColorRGB(0.4, 0.4, 0.4)
-    c.drawString(50, height - 72, f"URL: {data['url']}")
-    c.drawString(50, height - 84, f"Generated: {date.today().isoformat()}")
-    c.drawString(50, height - 96, data["summary"])
-
-    # score circle
+    # Score circle (fixed, top-right); the meta text on the left wraps clear of it.
     cx, cy, r = 510, height - 68, 38
     c.setStrokeColorRGB(0.8, 0.8, 0.8)
     c.circle(cx, cy, r, stroke=1, fill=0)
@@ -77,28 +99,47 @@ def build_pdf(data: dict, file_path: str) -> None:
         c.setFillColorRGB(0.8, 0.1, 0.1)
     c.drawCentredString(cx, cy - 7, str(score))
 
+    # Meta text, wrapped so a long URL or summary can't overflow the page.
+    meta_width = cx - r - 50 - 10        # stay left of the score circle
+    ty = height - 72
+    c.setFont("Helvetica", 9)
+    c.setFillColorRGB(0.4, 0.4, 0.4)
+    for line in _wrap_text(f"URL: {data['url']}", "Helvetica", 9, meta_width):
+        c.drawString(50, ty, line)
+        ty -= 12
+    c.drawString(50, ty, f"Generated: {date.today().isoformat()}")
+    ty -= 12
+    for line in _wrap_text(data["summary"], "Helvetica", 9, meta_width):
+        c.drawString(50, ty, line)
+        ty -= 12
+
+    # Keep the rows below the score circle even when the meta text is short.
+    ty = min(ty, cy - r - 8)
+
     # stats row
     c.setFont("Helvetica", 9)
     c.setFillColorRGB(0, 0.55, 0.2)
-    c.drawString(50, height - 112, f"Passed: {meta['checks_passed']}")
+    c.drawString(50, ty, f"Passed: {meta['checks_passed']}")
     c.setFillColorRGB(0.65, 0.45, 0)
-    c.drawString(130, height - 112, f"Warnings: {meta['checks_warned']}")
+    c.drawString(130, ty, f"Warnings: {meta['checks_warned']}")
     c.setFillColorRGB(0.75, 0.1, 0.1)
-    c.drawString(230, height - 112, f"Failed: {meta['checks_failed']}")
+    c.drawString(230, ty, f"Failed: {meta['checks_failed']}")
     c.setFillColorRGB(0.4, 0.4, 0.4)
-    c.drawString(310, height - 112, f"Response: {meta['response_time_ms']}ms")
+    c.drawString(310, ty, f"Response: {meta['response_time_ms']}ms")
+    ty -= 14
 
     # what the score means
     c.setFont("Helvetica-Oblique", 8)
     c.setFillColorRGB(0.4, 0.4, 0.4)
-    c.drawString(50, height - 126,
+    c.drawString(50, ty,
                  "Score: 70+ good  ·  50-69 needs improvement  ·  below 50 poor")
+    ty -= 8
 
     # divider
     c.setStrokeColorRGB(0.8, 0.8, 0.8)
-    c.line(50, height - 134, width - 50, height - 134)
+    c.line(50, ty, width - 50, ty)
 
-    y = height - 152
+    y = ty - 18
 
     def new_page_if_needed(needed: float):
         nonlocal y
@@ -127,8 +168,7 @@ def build_pdf(data: dict, file_path: str) -> None:
 
         for check in cat["checks"]:
             # wrap long text instead of cutting it off
-            name_lines = simpleSplit(check["name"], "Helvetica-Bold", 8, NAME_WIDTH)
-            msg_lines = simpleSplit(check["message"], "Helvetica", 8, msg_width)
+            name_lines, msg_lines = _wrap_check(check, NAME_WIDTH, msg_width)
             row_h = max(len(name_lines), len(msg_lines), 1) * LINE_H
             new_page_if_needed(row_h)
 

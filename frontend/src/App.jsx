@@ -120,7 +120,7 @@ const Home = () => {
         setDownloadMsg(null);
         try {
             const response = await axios.get(
-                `/api/download-pdf?url=${encodeURIComponent(url)}`,
+                `/api/download-pdf?url=${encodeURIComponent(url.trim())}`,
                 { responseType: 'blob' }
             );
             // Keep the server's domain+date filename (Content-Disposition).
